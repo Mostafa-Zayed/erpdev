@@ -1,0 +1,25 @@
+{
+    "name": "twf/garage",
+    "description": "",
+    "authors": [
+        {
+            "name": "The Web Fosters",
+            "email": "thewebfosters@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Modules\\Garage\\Providers\\GarageServiceProvider"
+            ],
+            "aliases": {
+                
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Garage\\": ""
+        }
+    }
+}

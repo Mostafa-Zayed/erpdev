@@ -1,0 +1,16 @@
+{
+    "name": "Garage",
+    "alias": "garage",
+    "description": "Useful for all kind of Garage shops",
+    "keywords": [],
+    "active": 1,
+    "order": 0,
+    "providers": [
+        "Modules\\Garage\\Providers\\GarageServiceProvider"
+    ],
+    "aliases": {},
+    "files": [
+        "start.php"
+    ],
+    "requires": []
+}
