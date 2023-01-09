@@ -272,7 +272,9 @@
 @stop
 @section('javascript')
     <script src="{{ asset('js/home.js?v=' . $asset_v) }}"></script>
+    <script src="{{ asset('public/js/home.js?v=' . $asset_v) }}"></script>
     <script src="{{ asset('js/payment.js?v=' . $asset_v) }}"></script>
+    <script src="{{ asset('public/js/payment.js?v=' . $asset_v) }}"></script>
     @if(!empty($all_locations))
         {!! $sells_chart_1->script() !!}
         {!! $sells_chart_2->script() !!}
