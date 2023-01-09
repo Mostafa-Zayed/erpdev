@@ -18,9 +18,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
+use App\Http\Traits\BusinessService;
+use App\Http\Traits\Util;
 
 class BusinessController extends Controller
 {
+    use BusinessService, Util;
     /*
     |--------------------------------------------------------------------------
     | BusinessController
@@ -82,11 +85,11 @@ class BusinessController extends Controller
      */
     public function getRegister()
     {
-        if (!config('constants.allow_registration')) {
+        if (!config('business.allowRegistration')) {
             return redirect('/');
         }
 
-        $currencies = $this->businessUtil->allCurrencies();
+        $currencies = Util::allCurrencies(); //$this->businessUtil->allCurrencies();
         
         $timezone_list = $this->businessUtil->allTimeZones();
 

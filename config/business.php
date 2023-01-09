@@ -1,0 +1,5 @@
+<?php
+
+return [
+    'allowRegistration' => true,
+];
