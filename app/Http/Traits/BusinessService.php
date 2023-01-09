@@ -62,4 +62,9 @@ trait BusinessService
             break;    
         }
     }
+
+    public static function businessCanRegister()
+    {
+        return config('business.allowRegistration') ? true : false;
+    }
 }
