@@ -54,19 +54,7 @@ class BusinessController extends Controller
         $this->businessUtil = $businessUtil;
         $this->moduleUtil = $moduleUtil;
 
-        $this->theme_colors = [
-            'blue' => 'Blue',
-            'black' => 'Black',
-            'purple' => 'Purple',
-            'green' => 'Green',
-            'red' => 'Red',
-            'yellow' => 'Yellow',
-            'blue-light' => 'Blue Light',
-            'black-light' => 'Black Light',
-            'purple-light' => 'Purple Light',
-            'green-light' => 'Green Light',
-            'red-light' => 'Red Light',
-        ];
+        $this->themeColors = config('business.themColors');
 
         $this->mailDrivers = [
             'smtp' => 'SMTP',
