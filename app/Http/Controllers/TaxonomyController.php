@@ -6,9 +6,12 @@ use App\Category;
 use App\Utils\ModuleUtil;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
+use App\Http\Traits\BusinessService;
+use App\Http\Traits\CategoryUtil;
 
 class TaxonomyController extends Controller
 {
+    use BusinessService,CategoryUtil;
     /**
      * All Utils instance.
      *
@@ -79,30 +82,28 @@ class TaxonomyController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function create()
-    {
-        $category_type = request()->get('type');
-        if ($category_type == 'product' && !auth()->user()->can('category.view') && !auth()->user()->can('category.create')) {
-            abort(403, 'Unauthorized action.');
-        }
-        $business_id = request()->session()->get('user.business_id');
+    {  
+        if(BusinessService::businessCan(['category.view','category.create'])){
 
-        $module_category_data = $this->moduleUtil->getTaxonomyData($category_type);
-
-        $categories = Category::where('business_id', $business_id)
+            if(! empty(request()->get('type')) && request()->get('type') == 'product') {
+                $module_category_data = $this->moduleUtil->getTaxonomyData(request()->get('type'));     
+                $categories = Category::where('business_id', BusinessService::getBusinessId())
                         ->where('parent_id', 0)
-                        ->where('category_type', $category_type)
+                        ->where('category_type', request()->get('type'))
                         ->select(['name', 'short_code', 'id'])
                         ->get();
-
-        $parent_categories = [];
-        if (!empty($categories)) {
-            foreach ($categories as $category) {
-                $parent_categories[$category->id] = $category->name;
+                        
+                    return view('taxonomy.create',
+                        [
+                            'parent_categories' => CategoryUtil::generateParentCategories($categories),
+                            'module_category_data' => $module_category_data,
+                            'category_type' => request()->get('type')
+                        ]);
             }
+                
         }
-
-        return view('taxonomy.create')
-                    ->with(compact('parent_categories', 'module_category_data', 'category_type'));
+        abort(403, 'Unauthorized action.');
+        
     }
 
     /**
