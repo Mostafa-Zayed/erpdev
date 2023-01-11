@@ -20,6 +20,8 @@ use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
 use App\Http\Traits\BusinessService;
 use App\Http\Traits\Util;
+use App\Interfaces\BusinessInterface;
+use App\Http\Requests\Business\StoreRequest;
 
 class BusinessController extends Controller
 {
@@ -42,17 +44,18 @@ class BusinessController extends Controller
     protected $restaurantUtil;
     protected $moduleUtil;
     protected $mailDrivers;
-
+    private $businessInterface;
     /**
      * Constructor
      *
      * @param ProductUtils $product
      * @return void
      */
-    public function __construct(BusinessUtil $businessUtil, RestaurantUtil $restaurantUtil, ModuleUtil $moduleUtil)
+    public function __construct(BusinessUtil $businessUtil, RestaurantUtil $restaurantUtil, ModuleUtil $moduleUtil, BusinessInterface $businessInterface)
     {
         $this->businessUtil = $businessUtil;
         $this->moduleUtil = $moduleUtil;
+        $this->businessInterface = $businessInterface;
 
         $this->themeColors = config('business.themColors');
 
@@ -106,128 +109,87 @@ class BusinessController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function postRegister(Request $request)
+    public function postRegister(StoreRequest $request)
     {
-        if (!config('constants.allow_registration')) {
-            return redirect('/');
-        }
+        if (BusinessService::businessCanRegister()) {
+            try {
+                
+                DB::beginTransaction();
 
-        try {
-            $validator = $request->validate(
-                [
-                    'name' => 'required|max:255',
-                    'currency_id' => 'required|numeric',
-                    'country' => 'required|max:255',
-                    'state' => 'required|max:255',
-                    'city' => 'required|max:255',
-                    'zip_code' => 'required|max:255',
-                    'landmark' => 'required|max:255',
-                    'time_zone' => 'required|max:255',
-                    'surname' => 'max:10',
-                    'email' => 'sometimes|nullable|email|unique:users|max:255',
-                    'first_name' => 'required|max:255',
-                    'username' => 'required|min:4|max:255|unique:users',
-                    'password' => 'required|min:4|max:255',
-                    'fy_start_month' => 'required',
-                    'accounting_method' => 'required',
-                ],
-                [
-                    'name.required' => __('validation.required', ['attribute' => __('business.business_name')]),
-                    'name.currency_id' => __('validation.required', ['attribute' => __('business.currency')]),
-                    'country.required' => __('validation.required', ['attribute' => __('business.country')]),
-                    'state.required' => __('validation.required', ['attribute' => __('business.state')]),
-                    'city.required' => __('validation.required', ['attribute' => __('business.city')]),
-                    'zip_code.required' => __('validation.required', ['attribute' => __('business.zip_code')]),
-                    'landmark.required' => __('validation.required', ['attribute' => __('business.landmark')]),
-                    'time_zone.required' => __('validation.required', ['attribute' => __('business.time_zone')]),
-                    'email.email' => __('validation.email', ['attribute' => __('business.email')]),
-                    'email.email' => __('validation.unique', ['attribute' => __('business.email')]),
-                    'first_name.required' => __('validation.required', ['attribute' =>
-                    __('business.first_name')]),
-                    'username.required' => __('validation.required', ['attribute' => __('business.username')]),
-                    'username.min' => __('validation.min', ['attribute' => __('business.username')]),
-                    'password.required' => __('validation.required', ['attribute' => __('business.username')]),
-                    'password.min' => __('validation.min', ['attribute' => __('business.username')]),
-                    'fy_start_month.required' => __('validation.required', ['attribute' => __('business.fy_start_month')]),
-                    'accounting_method.required' => __('validation.required', ['attribute' => __('business.accounting_method')]),
-                ]
-            );
+                //Create owner.
+                $owner_details = $request->only(['surname', 'first_name', 'last_name', 'username', 'email', 'password', 'language']);
 
-            DB::beginTransaction();
+                $owner_details['language'] = empty($owner_details['language']) ? config('app.locale') : $owner_details['language'];
 
-            //Create owner.
-            $owner_details = $request->only(['surname', 'first_name', 'last_name', 'username', 'email', 'password', 'language']);
+                $user = User::create_user($owner_details);
 
-            $owner_details['language'] = empty($owner_details['language']) ? config('app.locale') : $owner_details['language'];
+                $business_details = $request->only(['name', 'start_date', 'currency_id', 'time_zone']);
+                $business_details['fy_start_month'] = 1;
 
-            $user = User::create_user($owner_details);
+                $business_location = $request->only(['name', 'country', 'state', 'city', 'zip_code', 'landmark', 'website', 'mobile', 'alternate_number']);
 
-            $business_details = $request->only(['name', 'start_date', 'currency_id', 'time_zone']);
-            $business_details['fy_start_month'] = 1;
-
-            $business_location = $request->only(['name', 'country', 'state', 'city', 'zip_code', 'landmark', 'website', 'mobile', 'alternate_number']);
-
-            //Create the business
-            $business_details['owner_id'] = $user->id;
-            if (!empty($business_details['start_date'])) {
-                $business_details['start_date'] = Carbon::createFromFormat(config('constants.default_date_format'), $business_details['start_date'])->toDateString();
-            }
-
-            //upload logo
-            $logo_name = $this->businessUtil->uploadFile($request, 'business_logo', 'business_logos', 'image');
-            if (!empty($logo_name)) {
-                $business_details['logo'] = $logo_name;
-            }
-
-            //default enabled modules
-            $business_details['enabled_modules'] = ['purchases', 'add_sale', 'pos_sale', 'stock_transfers', 'stock_adjustment', 'expenses'];
-
-            $business = $this->businessUtil->createNewBusiness($business_details);
-
-            //Update user with business id
-            $user->business_id = $business->id;
-            $user->save();
-
-            $this->businessUtil->newBusinessDefaultResources($business->id, $user->id);
-            $new_location = $this->businessUtil->addLocation($business->id, $business_location);
-
-            //create new permission with the new location
-            Permission::create(['name' => 'location.' . $new_location->id]);
-
-            DB::commit();
-
-            //Module function to be called after after business is created
-            if (config('app.env') != 'demo') {
-                $this->moduleUtil->getModuleData('after_business_created', ['business' => $business]);
-            }
-
-            //Process payment information if superadmin is installed & package information is present
-            $is_installed_superadmin = $this->moduleUtil->isSuperadminInstalled();
-            $package_id = $request->get('package_id', null);
-            if ($is_installed_superadmin && !empty($package_id) && (config('app.env') != 'demo')) {
-                $package = \Modules\Superadmin\Entities\Package::find($package_id);
-                if (!empty($package)) {
-                    Auth::login($user);
-                    return redirect()->route('register-pay', ['package_id' => $package_id]);
+                //Create the business
+                $business_details['owner_id'] = $user->id;
+                if (!empty($business_details['start_date'])) {
+                    $business_details['start_date'] = Carbon::createFromFormat(config('constants.default_date_format'), $business_details['start_date'])->toDateString();
                 }
+
+                //upload logo
+                $logo_name = $this->businessUtil->uploadFile($request, 'business_logo', 'business_logos', 'image');
+                if (!empty($logo_name)) {
+                    $business_details['logo'] = $logo_name;
+                }
+
+                //default enabled modules
+                $business_details['enabled_modules'] = ['purchases', 'add_sale', 'pos_sale', 'stock_transfers', 'stock_adjustment', 'expenses'];
+
+                $business = $this->businessUtil->createNewBusiness($business_details);
+
+                //Update user with business id
+                $user->business_id = $business->id;
+                $user->save();
+
+                $this->businessUtil->newBusinessDefaultResources($business->id, $user->id);
+                $new_location = $this->businessUtil->addLocation($business->id, $business_location);
+
+                //create new permission with the new location
+                Permission::create(['name' => 'location.' . $new_location->id]);
+
+                DB::commit();
+
+                //Module function to be called after after business is created
+                if (config('app.env') != 'demo') {
+                    $this->moduleUtil->getModuleData('after_business_created', ['business' => $business]);
+                }
+
+                //Process payment information if superadmin is installed & package information is present
+                $is_installed_superadmin = $this->moduleUtil->isSuperadminInstalled();
+                $package_id = $request->get('package_id', null);
+                if ($is_installed_superadmin && !empty($package_id) && (config('app.env') != 'demo')) {
+                    $package = \Modules\Superadmin\Entities\Package::find($package_id);
+                    if (!empty($package)) {
+                        Auth::login($user);
+                        return redirect()->route('register-pay', ['package_id' => $package_id]);
+                    }
+                }
+
+                $output = [
+                    'success' => 1,
+                    'msg' => __('business.business_created_succesfully')
+                ];
+
+                return redirect('login')->with('status', $output);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                \Log::emergency("File:" . $e->getFile() . "Line:" . $e->getLine() . "Message:" . $e->getMessage());
+
+                $output = [
+                    'success' => 0,
+                    'msg' => __('messages.something_went_wrong')
+                ];
+
+                return back()->with('status', $output)->withInput();
             }
-
-            $output = [
-                'success' => 1,
-                'msg' => __('business.business_created_succesfully')
-            ];
-
-            return redirect('login')->with('status', $output);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            \Log::emergency("File:" . $e->getFile() . "Line:" . $e->getLine() . "Message:" . $e->getMessage());
-
-            $output = [
-                'success' => 0,
-                'msg' => __('messages.something_went_wrong')
-            ];
-
-            return back()->with('status', $output)->withInput();
         }
     }
 
