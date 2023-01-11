@@ -84,10 +84,17 @@ Route::group(['middleware' => ['auth:api', 'timezone'], 'prefix' => 'connector/a
     Route::post('call-logs', 'CallLogsController@saveCallLogs');
 
 });
-
+// Route::get('connector/install', 'Modules\Connector\Http\Controllers\InstallController@index');
 Route::group(['middleware' => ['web', 'authh', 'auth', 'SetSessionData', 'language', 'timezone', 'AdminSidebarMenu', 'CheckUserLogin'], 'namespace' => 'Modules\Connector\Http\Controllers', 'prefix' => 'connector'], function () {
 	Route::get('install', 'InstallController@index');
     Route::post('install', 'InstallController@install');
     Route::get('install/uninstall', 'InstallController@uninstall');
     Route::get('install/update', 'InstallController@update');
 });
+
+// Route::group(['middleware' => ['web', 'authh', 'auth', 'SetSessionData', 'language', 'timezone', 'AdminSidebarMenu', 'CheckUserLogin'], 'namespace' => 'Modules\Connector\Http\Controllers', 'prefix' => 'connector'], function () {
+// 	Route::get('install', 'InstallController@index');
+//     Route::post('install', 'InstallController@install');
+//     Route::get('install/uninstall', 'InstallController@uninstall');
+//     Route::get('install/update', 'InstallController@update');
+// });

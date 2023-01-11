@@ -373,6 +373,7 @@ class UserController extends ApiController
     */
     public function registerUser(Request $request)
     {
+        return 'ok';
         $request->validate([
             'username' => 'unique:users',
             'email' => 'required|unique:users',

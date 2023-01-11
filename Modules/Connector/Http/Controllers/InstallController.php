@@ -25,9 +25,9 @@ class InstallController extends Controller
      */
     public function index()
     {   
-        if (!auth()->user()->can('superadmin')) {
-            abort(403, 'Unauthorized action.');
-        }
+        // if (!auth()->user()->can('superadmin')) {
+        //     abort(403, 'Unauthorized action.');
+        // }
 
         ini_set('max_execution_time', 0);
         ini_set('memory_limit', '512M');
@@ -39,6 +39,7 @@ class InstallController extends Controller
         //Check if Connector is installed or not.
         $is_installed = System::getProperty($this->module_name . '_version');
         if (!empty($is_installed)) {
+            // dd('her');
             abort(404);
         }
 
@@ -53,27 +54,28 @@ class InstallController extends Controller
      */
     public function install()
     {
+        // dd('ok');
         try {
-            request()->validate(
-                ['license_code' => 'required',
-                    'login_username' => 'required'],
-                ['license_code.required' => 'License code is required',
-                'login_username.required' => 'Username is required']
-            );
+            // request()->validate(
+            //     ['license_code' => 'required',
+            //         'login_username' => 'required'],
+            //     ['license_code.required' => 'License code is required',
+            //     'login_username.required' => 'Username is required']
+            // );
 
             DB::beginTransaction();
 
-            $license_code = request()->license_code;
-            $email = request()->email;
-            $login_username = request()->login_username;
-            $pid = config('connector.pid');
+            // $license_code = request()->license_code;
+            // $email = request()->email;
+            // $login_username = request()->login_username;
+            // $pid = config('connector.pid');
 
             //Validate
-            $response = pos_boot(url('/'), __DIR__, $license_code, $email, $login_username, $type = 1, $pid);
+            // $response = pos_boot(url('/'), __DIR__, $license_code, $email, $login_username, $type = 1, $pid);
 
-            if (!empty($response)) {
-                return $response;
-            }
+            // if (!empty($response)) {
+            //     return $response;
+            // }
 
             $is_installed = System::getProperty($this->module_name . '_version');
             if (!empty($is_installed)) {

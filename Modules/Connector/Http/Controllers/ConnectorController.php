@@ -14,6 +14,7 @@ class ConnectorController extends Controller
      */
     public function index()
     {
+        dd('here');
         return view('connector::index');
     }
 

@@ -117,12 +117,8 @@ class BusinessController extends Controller
                 DB::beginTransaction();
 
                 //Create owner.
-                $owner_details = $request->only(['surname', 'first_name', 'last_name', 'username', 'email', 'password', 'language']);
-
-                $owner_details['language'] = empty($owner_details['language']) ? config('app.locale') : $owner_details['language'];
-
-                $user = User::create_user($owner_details);
-
+                $user = User::create_user($this->businessInterface->getOwnerDetails($request));
+                    
                 $business_details = $request->only(['name', 'start_date', 'currency_id', 'time_zone']);
                 $business_details['fy_start_month'] = 1;
 

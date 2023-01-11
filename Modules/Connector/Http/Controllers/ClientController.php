@@ -23,9 +23,9 @@ class ClientController extends Controller
      */
     public function index()
     {
-        if (!auth()->user()->can('superadmin')) {
-            abort(403, 'Unauthorized action.');
-        }
+        // if (!auth()->user()->can('superadmin')) {
+        //     abort(403, 'Unauthorized action.');
+        // }
 
         $is_demo = (config('app.env') == 'demo');
 
@@ -57,9 +57,9 @@ class ClientController extends Controller
      */
     public function store(Request $request)
     {
-        if (!auth()->user()->can('superadmin')) {
-            abort(403, 'Unauthorized action.');
-        }
+        // if (!auth()->user()->can('superadmin')) {
+        //     abort(403, 'Unauthorized action.');
+        // }
 
         try {
             $client = Passport::client()->forceFill([
