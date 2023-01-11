@@ -11,4 +11,6 @@ interface CategoryInterface
     public function getAllChilde($businessId,$type);
     
     public function getChild($categoryId,$businessId);
+
+    public function generateCategoryDetails(& $request);
 }

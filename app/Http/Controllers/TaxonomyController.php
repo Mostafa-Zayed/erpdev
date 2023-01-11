@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 use App\Http\Traits\BusinessService;
 use App\Http\Traits\CategoryUtil;
+use App\Interfaces\CategoryInterface;
 
 class TaxonomyController extends Controller
 {
@@ -18,14 +19,16 @@ class TaxonomyController extends Controller
      */
     protected $moduleUtil;
 
+    private $categoryInterface;
     /**
      * Constructor
      *
      * @param ProductUtils $product
      * @return void
      */
-    public function __construct(ModuleUtil $moduleUtil)
+    public function __construct(ModuleUtil $moduleUtil,CategoryInterface $categoryInterface)
     {
+        $this->categoryInterface = $categoryInterface;
         $this->moduleUtil = $moduleUtil;
     }
 
@@ -120,16 +123,8 @@ class TaxonomyController extends Controller
         }
 
         try {
-            $input = $request->only(['name', 'short_code', 'category_type', 'description']);
-            if (!empty($request->input('add_as_sub_cat')) &&  $request->input('add_as_sub_cat') == 1 && !empty($request->input('parent_id'))) {
-                $input['parent_id'] = $request->input('parent_id');
-            } else {
-                $input['parent_id'] = 0;
-            }
-            $input['business_id'] = $request->session()->get('user.business_id');
-            $input['created_by'] = $request->session()->get('user.id');
-
-            $category = Category::create($input);
+            
+            $category = Category::create($this->categoryInterface->generateCategoryDetails($request));
             $output = ['success' => true,
                             'data' => $category,
                             'msg' => __("category.added_success")
@@ -301,5 +296,10 @@ class TaxonomyController extends Controller
             return view('taxonomy.ajax_index')
                 ->with(compact('module_category_data', 'category_type'));
         }
+    }
+
+    private static function getCategoryDetails(& $request)
+    {
+
     }
 }
