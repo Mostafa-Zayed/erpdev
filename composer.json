@@ -37,7 +37,8 @@
         "srmklive/paypal": "^1.6",
         "stripe/stripe-php": "^6.10",
         "unicodeveloper/laravel-paystack": "^1.0",
-        "yajra/laravel-datatables-oracle": "^9.0"
+        "yajra/laravel-datatables-oracle": "^9.0",
+        "tymon/jwt-auth": "^1.0"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.2",
@@ -87,7 +88,10 @@
     "config": {
         "preferred-install": "dist",
         "sort-packages": true,
-        "optimize-autoloader": true
+        "optimize-autoloader": true,
+        "allow-plugins": {
+            "ocramius/package-versions": true
+        }
     },
     "minimum-stability": "dev",
     "prefer-stable": true
